@@ -18,7 +18,7 @@ runLoop = true;
 numPts = 0;
 frameCount = 0;
 
-while runLoop && frameCount < 400
+while runLoop
 
     % Get the next frame.
     videoFrame = snapshot(cam);
@@ -28,6 +28,7 @@ while runLoop && frameCount < 400
     if numPts < 10
         % Detection mode.
         bbox = faceDetector.step(videoFrameGray);
+        
 
         if ~isempty(bbox)
             % Find corner points inside the detected region.
@@ -41,6 +42,7 @@ while runLoop && frameCount < 400
 
             % Save a copy of the points.
             oldPoints = xyPoints;
+            
 
             % Convert the rectangle represented as [x, y, w, h] into an
             % M-by-2 matrix of [x,y] coordinates of the four corners. This
@@ -92,11 +94,17 @@ while runLoop && frameCount < 400
             oldPoints = visiblePoints;
             setPoints(pointTracker, oldPoints);
         end
+  
 
     end
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
+    if numPts >= 20 
+       my_image  = videoFrame;
+       imwrite(my_image, "this.png");
+      
+    end
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
