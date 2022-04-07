@@ -12,7 +12,7 @@ videoFrame = snapshot(cam);
 frameSize = size(videoFrame);
 
 % Create the video player object.
-videoPlayer = vision.VideoPlayer('Position', [100 100 [frameSize(2), frameSize(1)]+30]);
+videoPlayer = vision.VideoPlayer('Position', [50 50 [frameSize(2), frameSize(1)]+10]);
 
 runLoop = true;
 numPts = 0;
@@ -93,6 +93,21 @@ while runLoop
             % Reset the points.
             oldPoints = visiblePoints;
             setPoints(pointTracker, oldPoints);
+
+            points.Location(1)
+
+            %attempt 1 
+            if points.Location(1) < 200
+              
+
+        % sets my_image to the current frame
+             my_image  = videoFrame;
+       
+       %writes my_image to file
+             imwrite(my_image, "this.png");
+      
+            end
+
         end
   
 
@@ -100,11 +115,7 @@ while runLoop
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
-    if numPts >= 20 
-       my_image  = videoFrame;
-       imwrite(my_image, "this.png");
-      
-    end
+    
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
