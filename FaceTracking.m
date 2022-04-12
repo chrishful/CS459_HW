@@ -17,9 +17,21 @@ videoPlayer = vision.VideoPlayer('Position', [50 50 [frameSize(2), frameSize(1)]
 runLoop = true;
 numPts = 0;
 frameCount = 0;
+userSpecifiedLocation = "";
+timer = timer();
+
+
+
+%asks for user's input, ensures that it is one of the four required
+while true
+    prompt = "specify top left, top right, bottom left, or bottom right";
+    userSpecifiedLocation = input(prompt);
+    if (userSpecifiedLocation == "top left" || userSpecifiedLocation == "top right" || userSpecifiedLocation == "bottom left" || userSpecifiedLocation == "bottom right")
+         break;
+    end
+end
 
 while runLoop
-
     % Get the next frame.
     videoFrame = snapshot(cam);
     videoFrameGray = rgb2gray(videoFrame);
@@ -85,41 +97,71 @@ while runLoop
             bboxPolygon = reshape(bboxPoints', 1, []);
 
             % Display a bounding box around the face being tracked.
-            videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon, 'LineWidth', 3);
+           % videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon, 'LineWidth', 3);
 
             % Display tracked points.
-            videoFrame = insertMarker(videoFrame, visiblePoints, '+', 'Color', 'white');
+          %  videoFrame = insertMarker(videoFrame, visiblePoints, '+', 'Color', 'white');
 
             % Reset the points.
             oldPoints = visiblePoints;
             setPoints(pointTracker, oldPoints);
 
-            points.Location(1)
+          
+            currentQuadrant = checkBox(bboxPoints);
+            if currentQuadrant == "top left"
+                if(userSpecifiedLocation == "top left")
+                      % sets my_image to the current frame
+                     my_image = videoFrame;
+                      % writes my_image to file
+                     imwrite(my_image, "this.png")
+                     release(videoPlayer)
+                elseif(userSpecifiedLocation == "bottom right")
+                    disp("please move left")
+                end
 
-            %attempt 1 
-            if points.Location(1) < 200
-              
-
-        % sets my_image to the current frame
-             my_image  = videoFrame;
-       
-       %writes my_image to file
-             imwrite(my_image, "this.png");
-      
+            elseif currentQuadrant == "bottom right"
+                  if(userSpecifiedLocation == "bottom right")
+                      % sets my_image to the current frame
+                     my_image = videoFrame;
+                      % writes my_image to file
+                     imwrite(my_image, "this.png")
+                     return;
+                     
+                  end
+            elseif currentQuadrant == "top right"
+                  if(userSpecifiedLocation == "top right")
+                      % sets my_image to the current frame
+                     my_image = videoFrame;
+                      % writes my_image to file
+                     imwrite(my_image, "this.png")
+                     release(videoPlayer)
+                  end
+            elseif currentQuadrant == "bottom left"
+                  if(userSpecifiedLocation == "bottom left")
+                      % sets my_image to the current frame
+                     my_image = videoFrame;
+                      % writes my_image to file
+                     imwrite(my_image, "this.png")
+                     return
+                  end
+         
             end
 
         end
-  
 
     end
 
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
     
+    %sets a timer for 5 seconds
+    pause(2)
+
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
 end
+
 
 
 % Clean up.
@@ -127,3 +169,42 @@ clear cam;
 release(videoPlayer);
 release(pointTracker);
 release(faceDetector);
+
+
+
+% Checks the four corners of a box and determines the
+% quadrant it is in
+function x = checkBox(bboxPoints)    %width and height of photograph
+   width = 1280 + 200;
+   height = 720 + 100;
+
+
+   if isempty(bboxPoints)
+       x = "offscreen";
+   elseif bboxPoints(1, 1) < width/2 && bboxPoints(1,2) < height/2 && bboxPoints(2, 1) < width/2 && bboxPoints(2,2) < height/2 && bboxPoints(3, 1) < width/2 && bboxPoints(3,2) < height/2 && bboxPoints(4, 1) < width/2 && bboxPoints(4,2) < height/2
+       x = "top left";
+   elseif (bboxPoints(1, 1) > width/2 && bboxPoints(1,2) > height/2 && bboxPoints(2, 1) > width/2 && bboxPoints(2,2) > height/2 && bboxPoints(3, 1) > width/2 && bboxPoints(3,2) > height/2 && bboxPoints(4, 1) > width/2 && bboxPoints(4,2) > height/2)
+       x = "bottom right";
+   elseif (bboxPoints(1, 1) > width/2 && bboxPoints(1,2) < height/2 && bboxPoints(2, 1) > width/2 && bboxPoints(2,2) < height/2 && bboxPoints(3, 1) > width/2 && bboxPoints(3,2) < height/2 && bboxPoints(4, 1) > width/2 && bboxPoints(4,2) < height/2)
+       x = "top right";
+   elseif (bboxPoints(1, 1) < width/2 && bboxPoints(1,2) > height/2 && bboxPoints(2, 1) < width/2 && bboxPoints(2,2) > height/2 && bboxPoints(3, 1) < width/2 && bboxPoints(3,2) > height/2 && bboxPoints(4, 1) < width/2 && bboxPoints(4,2) > height/2)
+       x = "bottom left";
+   else 
+       x = "center";
+   end
+
+end
+
+%function to convince the user to move to the top right
+
+function x = topRight(position)
+    if(position == "top left") %move to the left
+    elseif(position == "center") %move slightly to the left
+    elseif(position == "bottom right") %move up
+    elseif(position == "bottom left") %move up and to the left
+    elseif(position == "top right") %do nothing
+    else %do the offscreen stuff?????
+    end
+
+end
+
