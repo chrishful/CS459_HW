@@ -40,11 +40,11 @@ while runLoop
     if numPts < 10
         % Detection mode.
         bbox = faceDetector.step(videoFrameGray);
-        
 
         if ~isempty(bbox)
             % Find corner points inside the detected region.
             points = detectMinEigenFeatures(videoFrameGray, 'ROI', bbox(1, :));
+       
 
             % Re-initialize the point tracker.
             xyPoints = points.Location;
@@ -80,6 +80,9 @@ while runLoop
         oldInliers = oldPoints(isFound, :);
 
         numPts = size(visiblePoints, 1);
+        if numPts < 10
+                offscreenPrompt();
+        end
 
         if numPts >= 10
             % Estimate the geometric transformation between the old points
@@ -106,45 +109,26 @@ while runLoop
             oldPoints = visiblePoints;
             setPoints(pointTracker, oldPoints);
 
-          
+            % Checks the current state of the box
             currentQuadrant = checkBox(bboxPoints);
-            if currentQuadrant == "top left"
-                if(userSpecifiedLocation == "top left")
-                      % sets my_image to the current frame
-                     my_image = videoFrame;
-                      % writes my_image to file
-                     imwrite(my_image, "this.png")
-                     release(videoPlayer)
-                elseif(userSpecifiedLocation == "bottom right")
-                    disp("please move left")
-                end
 
-            elseif currentQuadrant == "bottom right"
-                  if(userSpecifiedLocation == "bottom right")
-                      % sets my_image to the current frame
-                     my_image = videoFrame;
+            %if the quadrant is the correct quadrant
+            if(currentQuadrant == userSpecifiedLocation)
+                 % sets my_image to the current frame
+                 my_image = videoFrame;
                       % writes my_image to file
-                     imwrite(my_image, "this.png")
-                     return;
-                     
-                  end
-            elseif currentQuadrant == "top right"
-                  if(userSpecifiedLocation == "top right")
-                      % sets my_image to the current frame
-                     my_image = videoFrame;
-                      % writes my_image to file
-                     imwrite(my_image, "this.png")
-                     release(videoPlayer)
-                  end
-            elseif currentQuadrant == "bottom left"
-                  if(userSpecifiedLocation == "bottom left")
-                      % sets my_image to the current frame
-                     my_image = videoFrame;
-                      % writes my_image to file
-                     imwrite(my_image, "this.png")
-                     return
-                  end
-         
+                 imwrite(my_image, "this.png")
+                 delete(findall(0))
+                 break;
+            %otherwise begin to prompt the user     
+            elseif (userSpecifiedLocation == "top right") 
+                topRight(currentQuadrant)
+            elseif (userSpecifiedLocation == "top left") 
+                topLeft(currentQuadrant)
+            elseif (userSpecifiedLocation == "bottom right") 
+                bottomRight(currentQuadrant)
+            elseif (userSpecifiedLocation == "bottom left") 
+                bottomLeft(currentQuadrant)
             end
 
         end
@@ -155,8 +139,7 @@ while runLoop
     step(videoPlayer, videoFrame);
     
     %sets a timer for 5 seconds
-    pause(2)
-
+    %pause(2)
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
@@ -174,7 +157,7 @@ release(faceDetector);
 
 % Checks the four corners of a box and determines the
 % quadrant it is in
-function x = checkBox(bboxPoints)    %width and height of photograph
+function x = checkBox(bboxPoints)    %width and height of photograph + some error
    width = 1280 + 200;
    height = 720 + 100;
 
@@ -195,16 +178,62 @@ function x = checkBox(bboxPoints)    %width and height of photograph
 
 end
 
-%function to convince the user to move to the top right
 
-function x = topRight(position)
+%function to convince the user to move to the top right
+function topRight(position)
     if(position == "top left") %move to the left
     elseif(position == "center") %move slightly to the left
     elseif(position == "bottom right") %move up
     elseif(position == "bottom left") %move up and to the left
     elseif(position == "top right") %do nothing
-    else %do the offscreen stuff?????
+    else  %do the offscreen stuff?????
     end
-
 end
+
+%function to convince a user to move to the top left
+function topLeft(position)
+    if(position == "top right") %move to the right
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        play(player)  
+    elseif(position == "center") %move slightly to the right
+    elseif(position == "bottom right") 
+        %move up and to the right
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        play(player)
+    elseif(position == "bottom left") %move up 
+    elseif(position == "top left") %do nothing
+    else  %do the offscreen stuff?????
+    end
+end
+
+%function to convince a user to move to the bottom right
+function bottomRight(position)
+    if(position == "top left") %move down and to the left
+    elseif(position == "center") %move slightly to the left
+    elseif(position == "top right") %move down
+    elseif(position == "bottom left") %move to the left
+    elseif(position == "bottom right") %do nothing
+    else  %do the offscreen stuff?????
+    end
+end
+
+%function to convince a user to move to the bottom left
+function bottomLeft(position)
+    if(position == "top left") %move down
+    elseif(position == "center") %move slightly to the right
+    elseif(position == "bottom right") %move to the right
+    elseif(position == "top right") %move down and to the right
+    elseif(position == "bottom left") %do nothing
+    else  %do the offscreen stuff?????
+    end
+end
+
+function offscreenPrompt()
+    disp('get onscreen.')
+end
+
+
+
 
