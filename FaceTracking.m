@@ -14,7 +14,7 @@ pointTracker = vision.PointTracker('MaxBidirectionalError', 2);
 % Create the webcam object.
 cam = webcam();
 
-% Keeps track of offscreen movement
+% Keeps track of offscreen and onscreen movement
 moves = 0;
 movesOnscreen = 0;
 
@@ -29,13 +29,12 @@ runLoop = true;
 numPts = 0;
 frameCount = 0;
 userSpecifiedLocation = "";
-timer = timer();
 
 
 
 %asks for user's input, ensures that it is one of the four required
 while true
-    prompt = "specify top left, top right, bottom left, or bottom right";
+    prompt = "specify top left, top right, bottom left, or bottom right: ";
     userSpecifiedLocation = input(prompt);
     if (userSpecifiedLocation == "top left" || userSpecifiedLocation == "top right" || userSpecifiedLocation == "bottom left" || userSpecifiedLocation == "bottom right")
          break;
@@ -83,6 +82,7 @@ while runLoop
             % Display detected corners.
             videoFrame = insertMarker(videoFrame, xyPoints, '+', 'Color', 'white');
         end
+        % if still not enough points, begin to prompt the user
         if numPts < 10
                 moves = offscreenPrompt(moves);
         end
@@ -111,32 +111,25 @@ while runLoop
             % format required by insertShape.
             bboxPolygon = reshape(bboxPoints', 1, []);
 
-            % Display a bounding box around the face being tracked.
-         %  videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon, 'LineWidth', 3);
-
-            % Display tracked points.
-          %  videoFrame = insertMarker(videoFrame, visiblePoints, '+', 'Color', 'white');
-
             % Reset the points.
             oldPoints = visiblePoints;
             setPoints(pointTracker, oldPoints);
 
             % Checks the current state of the box
             currentQuadrant = checkBox(bboxPoints);
-            disp(currentQuadrant)
 
             %if the quadrant is the correct quadrant
             if(currentQuadrant == userSpecifiedLocation)
                  % sets my_image to the current frame
                  my_image = videoFrame;
-                      % writes my_image to file
+                  % writes my_image to file
                  imwrite(my_image, "this.png")
                  [y, Fs] = audioread('camera.mp3');
                  player = audioplayer(y, Fs);
                  playblocking(player)
                  delete(findall(0))
                  break;
-            %otherwise begin to prompt the user     
+            % otherwise begin to prompt the user     
             elseif (userSpecifiedLocation == "top right") 
                 movesOnscreen = topRight(movesOnscreen, currentQuadrant);
             elseif (userSpecifiedLocation == "top left") 
@@ -172,8 +165,8 @@ release(faceDetector);
 % Checks the four corners of a box and determines the
 % quadrant it is in
 function x = checkBox(bboxPoints)    %width and height of photograph + some error
-   width = 1280 + 100;
-   height = 720 + 100;
+   width = 1280 + 50;
+   height = 720 + 50;
 
    if isempty(bboxPoints)
        x = "offscreen";
@@ -320,7 +313,8 @@ function x = bottomLeft(count, position)
     end
 end
 
-
+%function to try to move a user from offscreen onto 
+%moves right 4, left 8, up 4, then down 8
 function x = offscreenPrompt(moves)
     if moves < 4
         [y, Fs] = audioread('Right.mp3');
