@@ -1,11 +1,22 @@
+%% Initialization
+% HCI Homework 3 Question 2
+% Louis Keith and Chris Hickman
+% 4-7-22
+
+
 % Create the face detector object.
 faceDetector = vision.CascadeObjectDetector();
+
 
 % Create the point tracker object.
 pointTracker = vision.PointTracker('MaxBidirectionalError', 2);
 
 % Create the webcam object.
 cam = webcam();
+
+% Keeps track of offscreen movement
+moves = 0;
+movesOnscreen = 0;
 
 % Capture one frame to get its size.
 videoFrame = snapshot(cam);
@@ -72,6 +83,9 @@ while runLoop
             % Display detected corners.
             videoFrame = insertMarker(videoFrame, xyPoints, '+', 'Color', 'white');
         end
+        if numPts < 10
+                moves = offscreenPrompt(moves);
+        end
 
     else
         % Tracking mode.
@@ -80,9 +94,7 @@ while runLoop
         oldInliers = oldPoints(isFound, :);
 
         numPts = size(visiblePoints, 1);
-        if numPts < 10
-                offscreenPrompt();
-        end
+        
 
         if numPts >= 10
             % Estimate the geometric transformation between the old points
@@ -100,7 +112,7 @@ while runLoop
             bboxPolygon = reshape(bboxPoints', 1, []);
 
             % Display a bounding box around the face being tracked.
-           % videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon, 'LineWidth', 3);
+         %  videoFrame = insertShape(videoFrame, 'Polygon', bboxPolygon, 'LineWidth', 3);
 
             % Display tracked points.
           %  videoFrame = insertMarker(videoFrame, visiblePoints, '+', 'Color', 'white');
@@ -111,6 +123,7 @@ while runLoop
 
             % Checks the current state of the box
             currentQuadrant = checkBox(bboxPoints);
+            disp(currentQuadrant)
 
             %if the quadrant is the correct quadrant
             if(currentQuadrant == userSpecifiedLocation)
@@ -118,17 +131,20 @@ while runLoop
                  my_image = videoFrame;
                       % writes my_image to file
                  imwrite(my_image, "this.png")
+                 [y, Fs] = audioread('camera.mp3');
+                 player = audioplayer(y, Fs);
+                 playblocking(player)
                  delete(findall(0))
                  break;
             %otherwise begin to prompt the user     
             elseif (userSpecifiedLocation == "top right") 
-                topRight(currentQuadrant)
+                movesOnscreen = topRight(movesOnscreen, currentQuadrant);
             elseif (userSpecifiedLocation == "top left") 
-                topLeft(currentQuadrant)
+                movesOnscreen = topLeft(movesOnscreen, currentQuadrant);
             elseif (userSpecifiedLocation == "bottom right") 
-                bottomRight(currentQuadrant)
+               movesOnscreen = bottomRight(movesOnscreen, currentQuadrant);
             elseif (userSpecifiedLocation == "bottom left") 
-                bottomLeft(currentQuadrant)
+                movesOnscreen = bottomLeft(movesOnscreen, currentQuadrant);
             end
 
         end
@@ -138,8 +154,6 @@ while runLoop
     % Display the annotated video frame using the video player object.
     step(videoPlayer, videoFrame);
     
-    %sets a timer for 5 seconds
-    %pause(2)
 
     % Check whether the video player window has been closed.
     runLoop = isOpen(videoPlayer);
@@ -158,9 +172,8 @@ release(faceDetector);
 % Checks the four corners of a box and determines the
 % quadrant it is in
 function x = checkBox(bboxPoints)    %width and height of photograph + some error
-   width = 1280 + 200;
+   width = 1280 + 100;
    height = 720 + 100;
-
 
    if isempty(bboxPoints)
        x = "offscreen";
@@ -180,58 +193,164 @@ end
 
 
 %function to convince the user to move to the top right
-function topRight(position)
+function x = topRight(count, position)
+    x = count;
     if(position == "top left") %move to the left
-    elseif(position == "center") %move slightly to the left
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+    elseif(position == "center" && mod(count, 2) == 0) %move slightly up
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+        x = count + 1;
+    elseif(position == "center" && mod(count, 2) == 1) %move slightly left
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+        x = count + 1;
     elseif(position == "bottom right") %move up
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
     elseif(position == "bottom left") %move up and to the left
-    elseif(position == "top right") %do nothing
-    else  %do the offscreen stuff?????
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    else
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
     end
 end
 
 %function to convince a user to move to the top left
-function topLeft(position)
+function x = topLeft(count, position)
+    x = count;
     if(position == "top right") %move to the right
         [y, Fs] = audioread('Right.mp3');
         player = audioplayer(y, Fs);
-        play(player)  
-    elseif(position == "center") %move slightly to the right
-    elseif(position == "bottom right") 
-        %move up and to the right
+        playblocking(player)
+    elseif(position == "center" && mod(count, 2) == 0) %move slightly up
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+        x = count + 1;
+   elseif(position == "center" && mod(count, 2) == 1) %move slightly right
         [y, Fs] = audioread('Right.mp3');
         player = audioplayer(y, Fs);
-        play(player)
-    elseif(position == "bottom left") %move up 
-    elseif(position == "top left") %do nothing
-    else  %do the offscreen stuff?????
+        playblocking(player)  
+        x = count + 1;
+    elseif(position == "bottom right") %move up and to the right
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    elseif(position == "bottom left") %move up
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+    else  
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
     end
 end
 
-%function to convince a user to move to the bottom right
-function bottomRight(position)
-    if(position == "top left") %move down and to the left
-    elseif(position == "center") %move slightly to the left
+%function to convince the user to move to the bottom right
+function x = bottomRight(count, position)
+    x = count;
+    if(position == "top left") %move to the left
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+    elseif(position == "center" && mod(count, 2) == 0) %move slightly down
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+        x = count + 1;
+    elseif(position == "center" && mod(count, 2) == 1) %move slightly left
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+        x = count + 1;
     elseif(position == "top right") %move down
-    elseif(position == "bottom left") %move to the left
-    elseif(position == "bottom right") %do nothing
-    else  %do the offscreen stuff?????
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    elseif(position == "bottom left") %move up and to the left
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    else
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
     end
 end
 
 %function to convince a user to move to the bottom left
-function bottomLeft(position)
-    if(position == "top left") %move down
-    elseif(position == "center") %move slightly to the right
-    elseif(position == "bottom right") %move to the right
-    elseif(position == "top right") %move down and to the right
-    elseif(position == "bottom left") %do nothing
-    else  %do the offscreen stuff?????
+function x = bottomLeft(count, position)
+    x = count;
+    if(position == "top right") %move to the right
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    elseif(position == "center" && mod(count, 2) == 0) %move slightly down
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+        x = count + 1;
+   elseif(position == "center" && mod(count, 2) == 1) %move slightly right
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+        x = count + 1;
+    elseif(position == "bottom right") %move right
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)
+    elseif(position == "top left") %move up
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player)  
+    else  
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
     end
 end
 
-function offscreenPrompt()
-    disp('get onscreen.')
+
+function x = offscreenPrompt(moves)
+    if moves < 4
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
+        x = moves + 1;
+    elseif moves < 12
+        [y, Fs] = audioread('Left.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
+        x = moves + 1;
+    elseif moves < 16
+        [y, Fs] = audioread('Right.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
+        x = moves + 1;
+    elseif moves < 20
+        [y, Fs] = audioread('Up.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
+        x = moves + 1;
+    elseif moves < 28
+        [y, Fs] = audioread('Down.mp3');
+        player = audioplayer(y, Fs);
+        playblocking(player) 
+        x = moves + 1;
+    else 
+        disp("please try again")
+    end
+
 end
 
 
